@@ -1,7 +1,11 @@
 import { authModalState } from '@/src/atoms/authModalAtom';
+import { auth } from '@/src/firebase/clientApp';
 import { Input, Button, Flex, Text } from '@chakra-ui/react';
+import { Auth } from 'firebase/auth';
 import React, { useState } from 'react';
 import { useSetRecoilState } from 'recoil';
+import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
+import { FIREBASE_ERRORS } from '@/src/firebase/errors';
 
 const SignUp = () => {
     const setAuthModalState = useSetRecoilState(authModalState);
@@ -12,8 +16,26 @@ const SignUp = () => {
         confirmPassword: ""
     });
 
-    const onSubmit = () => {
+    const [error, setError] = useState("");
 
+    const [
+        createUserWithEmailAndPassword,
+        user,
+        loading,
+        userError
+    ] = useCreateUserWithEmailAndPassword(auth);
+
+    const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        if (error) setError("");
+
+        if (signUpForm.password !== signUpForm.confirmPassword) {
+            setError("Passwords do not match.");
+            return;
+        }
+
+        createUserWithEmailAndPassword(signUpForm.email, signUpForm.password);
     };
 
     const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,11 +115,17 @@ const SignUp = () => {
                 }}
                 bg="gray.50"
             />
+            {(error || userError) && (
+                <Text textAlign="center" color="red" fontSize="10px">
+                    {error || FIREBASE_ERRORS[userError?.message as keyof typeof FIREBASE_ERRORS]}
+                </Text>
+            )}
             <Button type="submit"
                 width="100%"
                 height="36px"
                 mt={2}
-                mb={2}>Sign Up</Button>
+                mb={2}
+                isLoading={loading}>Sign Up</Button>
             <Flex fontSize="9pt" justifyContent="center">
                 <Text mr={1}>Already a reddittor?</Text>
                 <Text color="blue.500"
