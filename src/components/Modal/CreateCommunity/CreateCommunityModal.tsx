@@ -27,7 +27,7 @@ const CreateCommunityModal = ({ open, handleClose }) => {
 
     return (
         <>
-            <Modal isOpen={open} onClose={handleClose} size="lg">
+            <Modal isOpen={open} onClose={handleClose} size="lg" isCentered>
                 <ModalOverlay />
                 <ModalContent>
                     <ModalHeader

@@ -29,7 +29,7 @@ const AuthModal = () => {
 
     return (
         <>
-            <Modal isOpen={modalState.open} onClose={handleClose}>
+            <Modal isOpen={modalState.open} onClose={handleClose} isCentered>
                 <ModalOverlay />
                 <ModalContent>
                     <ModalHeader textAlign="center">
