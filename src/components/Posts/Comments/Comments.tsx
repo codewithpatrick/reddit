@@ -13,9 +13,13 @@ import CommentInput from "./CommentInput";
 import {
   collection,
   doc,
+  getDocs,
   increment,
+  orderBy,
+  query,
   serverTimestamp,
   Timestamp,
+  where,
   writeBatch,
 } from "firebase/firestore";
 import { firestore } from "@/src/firebase/clientApp";
@@ -31,8 +35,9 @@ type CommentsProps = {
 const Comments = ({ user, selectedPost, communityId }: CommentsProps) => {
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
-  const [fetchLoading, setFetchLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [createLoading, setCreateLoading] = useState(false);
+  const [loadingDeleteId, setLoadingDeleteId] = useState("");
   const setPostState = useSetRecoilState(postState);
 
   const onCreateComment = async () => {
@@ -88,13 +93,67 @@ const Comments = ({ user, selectedPost, communityId }: CommentsProps) => {
     setCreateLoading(false);
   };
 
-  const onDeleteComment = async (comment: Comment) => {};
+  const onDeleteComment = async (comment: Comment) => {
+    setLoadingDeleteId(comment.id);
 
-  const getPostComments = async () => {};
+    try {
+      const batch = writeBatch(firestore);
+
+      // delete comment document
+      const commentDocRef = doc(firestore, "comments", comment.id);
+      batch.delete(commentDocRef);
+
+      // update post numberOfComments -1
+      const postDocRef = doc(firestore, "posts", selectedPost?.id!);
+      batch.update(postDocRef, {
+        numberOfComments: increment(-1),
+      });
+
+      await batch.commit();
+
+      // update client recoil state
+      setPostState((prev) => ({
+        ...prev,
+        selectedPost: {
+          ...prev.selectedPost,
+          numberOfComments: prev.selectedPost?.numberOfComments! - 1,
+        } as Post,
+      }));
+
+      setComments((prev) => prev.filter((item) => item.id !== comment.id));
+    } catch (error: any) {
+      console.log("onDeleteComment error", error);
+    }
+
+    setLoadingDeleteId("");
+  };
+
+  const getPostComments = async () => {
+    try {
+      const commentsQuery = query(
+        collection(firestore, "comments"),
+        where("postId", "==", selectedPost?.id),
+        orderBy("createdAt", "desc")
+      );
+
+      const commentDocs = await getDocs(commentsQuery);
+      const comments = commentDocs.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setComments(comments as Comment[]);
+    } catch (error: any) {
+      console.log("getPostComments error", error);
+    }
+
+    setFetchLoading(false);
+  };
 
   useEffect(() => {
+    if (!selectedPost) return;
     getPostComments();
-  }, []);
+  }, [selectedPost]);
 
   return (
     <Box bg="white" borderRadius="0px 0px 4px 4px" p={2}>
@@ -106,13 +165,15 @@ const Comments = ({ user, selectedPost, communityId }: CommentsProps) => {
         fontSize="10pt"
         width="100%"
       >
-        <CommentInput
-          commentText={commentText}
-          setCommentText={setCommentText}
-          user={user}
-          createLoading={createLoading}
-          onCreateComment={onCreateComment}
-        />
+        {!fetchLoading && (
+          <CommentInput
+            commentText={commentText}
+            setCommentText={setCommentText}
+            user={user}
+            createLoading={createLoading}
+            onCreateComment={onCreateComment}
+          />
+        )}
       </Flex>
       <Stack spacing={6} p={2}>
         {fetchLoading ? (
@@ -146,7 +207,7 @@ const Comments = ({ user, selectedPost, communityId }: CommentsProps) => {
                     key={comment.id}
                     comment={comment}
                     onDeleteComment={onDeleteComment}
-                    loadingDelete={false}
+                    loadingDelete={loadingDeleteId === comment.id}
                     userId={user.uid}
                   />
                 ))}

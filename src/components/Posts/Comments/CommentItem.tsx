@@ -32,7 +32,6 @@ const CommentItem = ({
   loadingDelete,
   userId,
 }: CommentItemProps) => {
-  console.log("comment", comment);
   return (
     <Flex>
       <Box mr={2}>
