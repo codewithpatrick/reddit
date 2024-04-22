@@ -179,7 +179,7 @@ const Comments = ({ user, selectedPost, communityId }: CommentsProps) => {
         {fetchLoading ? (
           <>
             {[0, 1, 2].map((item) => (
-              <Box>
+              <Box key={item}>
                 <SkeletonCircle size="10" />
                 <SkeletonText mt="4" noOfLines={2} spacing="4" />
               </Box>
@@ -208,7 +208,7 @@ const Comments = ({ user, selectedPost, communityId }: CommentsProps) => {
                     comment={comment}
                     onDeleteComment={onDeleteComment}
                     loadingDelete={loadingDeleteId === comment.id}
-                    userId={user.uid}
+                    userId={user?.uid}
                   />
                 ))}
               </>
