@@ -91,7 +91,6 @@ const useCommunityData = () => {
         newSnippet
       );
 
-      console.log("communityData.id: ", communityData.id);
       batch.update(doc(firestore, "communities", communityData.id), {
         numberOfMembers: increment(1),
       });
@@ -102,6 +101,7 @@ const useCommunityData = () => {
       setCommunityStateValue((prev) => ({
         ...prev,
         mySnippets: [...prev.mySnippets, newSnippet],
+        snippetsFetched: true,
       }));
     } catch (error: any) {
       console.log("joinCommunity error", error);
@@ -167,6 +167,7 @@ const useCommunityData = () => {
       setCommunityStateValue((prev) => ({
         ...prev,
         mySnippets: [],
+        snippetsFetched: false,
       }));
 
       return;
